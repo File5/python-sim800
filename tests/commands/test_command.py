@@ -11,6 +11,13 @@ def test_command_repr():
     c = Command(test_cmd)
     assert repr(c) == '<Command "ATtest_cmd">'
 
+def test_command_repr_subclass():
+    class DerivedCommand(Command):
+        pass
+    test_cmd = "test_cmd"
+    c = DerivedCommand(test_cmd)
+    assert repr(c) == '<DerivedCommand "ATtest_cmd">'
+
 def test_command_parse_lines():
     test_cmd = "+COPS"
     c = Command(test_cmd, [test_cmd])

@@ -14,7 +14,7 @@ class Command:
         return self.cmd.encode('ascii')
 
     def __repr__(self):
-        return '<Command "{}">'.format(self.PREFIX + self.cmd)
+        return '<{} "{}">'.format(self.__class__.__name__, self.PREFIX + self.cmd)
 
     def parse_response(self, response):
         start_line_no = 0
