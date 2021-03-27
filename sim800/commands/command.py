@@ -52,5 +52,8 @@ class Command:
         for i in range(start_line_no, last_line_no + 1):
             del lines[i]
 
+        result = b'\r\n'.join(result)
+        if not result.startswith(b'\r\n'):
+            result = b'\r\n' + result
         return Result(result)
 
