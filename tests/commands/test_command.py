@@ -15,21 +15,20 @@ def test_command_parse_lines():
     test_cmd = "+COPS"
     c = Command(test_cmd, [test_cmd])
     r = [
-        "+CNMI\r\n",  # some unsolicited result
-        "\r\n",
-        '+COPS: 0,0,"CHINA MOBILE"\r\n',
-        "\r\n",
-        "OK\r\n"
+        b'',
+        b'+CNMI',  # some unsolicited result
+        b'',
+        b'+COPS: 0,0,"CHINA MOBILE"',
+        b'',
+        b'OK',
+        b''
     ]
-    cmd_r = c.parse_lines(r)
+    r = b'\r\n'.join(r)
+    cmd_r = c.parse_response(r)
 
     assert cmd_r == [
-        '+COPS: 0,0,"CHINA MOBILE"\r\n',
-        "OK\r\n"
-    ]
-    assert r == [
-        "+CNMI\r\n",  # some unsolicited result
-        "\r\n",
-        "\r\n",
+        b'',
+        b'+COPS: 0,0,"CHINA MOBILE"',
+        b'',
     ]
 

@@ -1,3 +1,6 @@
+import io
+
+
 class Command:
     PREFIX = "AT"
 
@@ -13,24 +16,41 @@ class Command:
     def __repr__(self):
         return '<Command "{}">'.format(self.PREFIX + self.cmd)
 
-    def parse_lines(self, lines):
-        parsed_indexes = []
-        for i, line in enumerate(lines):
-            if line.startswith("AT"):
-                pass  # that's just an echo of the sent command
-            elif line.startswith("OK") or line.startswith("ERROR"):
-                # if i != 0 and lines[i - 1].isspace():
-                #     parsed_indexes.append(i - 1)  # empty line before final result
-                parsed_indexes.append(i)  # final result
-            else:
-                for prefix in self.result_prefixes:
-                    if line.startswith(prefix):
-                        parsed_indexes.append(i)
-                        break
-        result = []
-        for i in parsed_indexes:
-            result.append(lines[i])
-        for i in reversed(parsed_indexes):
+    def parse_response(self, response):
+        start_line_no = 0
+        last_line_no = -1
+
+        lines = response.split(b'\r\n')
+        for line_no, line in enumerate(lines):
+            line_str = line.decode('ascii')
+            found_prefix = False
+            for prefix in self.result_prefixes:
+
+                # check current line
+                if line_str.startswith(prefix):
+                    start_line_no = line_no
+                    last_line_no = line_no
+
+                    # if there is line before current, take it if it's empty
+                    if line_no > 0:
+                        prev_line = lines[line_no - 1]
+                        if prev_line == b'':
+                            start_line_no = line_no - 1
+
+                    # if there is line after current, take it if it's empty
+                    if line_no + 1 < len(lines):
+                        next_line = lines[line_no + 1]
+                        if next_line == b'':
+                            last_line_no = line_no + 1
+
+                    found_prefix = True
+                    break  # prefix loop
+            if found_prefix:
+                break  # lines loop
+
+        result = lines[start_line_no:last_line_no + 1]
+        for i in range(start_line_no, last_line_no + 1):
             del lines[i]
+
         return result
 
