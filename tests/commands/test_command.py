@@ -33,7 +33,7 @@ def test_command_parse_lines():
     r = b'\r\n'.join(r)
     cmd_r = c.parse_response(r)
 
-    assert cmd_r == [
+    assert cmd_r.raw_result == [
         b'',
         b'+COPS: 0,0,"CHINA MOBILE"',
         b'',

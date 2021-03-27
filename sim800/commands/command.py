@@ -1,4 +1,4 @@
-import io
+from sim800.results import Result
 
 
 class Command:
@@ -52,5 +52,5 @@ class Command:
         for i in range(start_line_no, last_line_no + 1):
             del lines[i]
 
-        return result
+        return Result(result)
 
