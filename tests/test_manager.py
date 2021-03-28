@@ -1,6 +1,6 @@
 import pytest
 
-from sim800.manager import SIM800
+from sim800.manager import SIM800, BufferedReader
 from sim800.commands.command import Command
 from sim800.results.result import Result
 import io
@@ -63,9 +63,40 @@ def test_bytes_io_after_next_write():
 @pytest.fixture
 def sim800():
     s = SIM800()
+    timeout = s.serial.timeout
     s.serial = BytesIO()
+    s.buffered_reader = BufferedReader(s.serial, timeout=timeout)
     return s
 
+
+def test_sim800_readline(sim800):
+    data = b'AT+GSV;+GSN\r\r\nSIMCOM_Ltd\r\nSIMCOM_SIM800L\r\nRevision:***REMOVED***\r\n\r\n***REMOVED***\r\n\r\nOK\r\n'
+
+    s = sim800
+    s.serial.write(data)
+    s.serial.seek(0)
+
+    assert s.readline() == b'AT+GSV;+GSN\r'
+    assert s.readline() == b'\r\n'
+    assert s.readline() == b'SIMCOM_Ltd\r\n'
+    assert s.readline() == b'SIMCOM_SIM800L\r\n'
+    assert s.readline() == b'Revision:***REMOVED***\r\n'
+    assert s.readline() == b'\r\n'
+    assert s.readline() == b'***REMOVED***\r\n'
+    assert s.readline() == b'\r\n'
+    assert s.readline() == b'OK\r\n'
+
+def test_sim800_read_echo_or_result(sim800):
+    data = b'AT+GSV;+GSN\r\r\nSIMCOM_Ltd\r\nSIMCOM_SIM800L\r\nRevision:***REMOVED***\r\n\r\n***REMOVED***\r\n\r\nOK\r\n'
+
+    s = sim800
+    s.serial.write(data)
+    s.serial.seek(0)
+
+    assert s.read_echo_or_result() == b'AT+GSV;+GSN\r'
+    assert s.read_echo_or_result() == b'\r\nSIMCOM_Ltd\r\nSIMCOM_SIM800L\r\nRevision:***REMOVED***\r\n'
+    assert s.read_echo_or_result() == b'\r\n***REMOVED***\r\n'
+    assert s.read_echo_or_result() == b'\r\nOK\r\n'
 
 def test_sim800_send_command_recv_recv_result(sim800):
     sim800.serial.after_next_write(b'\r\n+COPS: 0,0,"CHINA MOBILE"\r\n\r\nOK\r\n')

@@ -8,6 +8,32 @@ class TimeoutException(Exception):
     pass
 
 
+class BufferedReader(io.BufferedReader):
+    def __init__(self, *args, **kwargs):
+        self._timeout = 1
+        if 'timeout' in kwargs:
+            self._timeout = kwargs.pop('timeout')
+        super().__init__(*args, **kwargs)
+
+    def read_until(self, expected=b'\n', size=None):
+        lenterm = len(expected)
+        line = bytearray()
+        timeout = serial.serialutil.Timeout(self._timeout)
+        while True:
+            c = self.read(1)
+            if c:
+                line += c
+                if line[-lenterm:] == expected:
+                    break
+                if size is not None and len(line) >= size:
+                    break
+            else:
+                break
+            if timeout.expired():
+                break
+        return bytes(line)
+
+
 class SIM800:
     DEFAULT_TIMEOUT = 5  # (float) seconds
     DEFAULT_WRITE_TIMEOUT = 5  # (float) seconds
@@ -18,6 +44,7 @@ class SIM800:
         if 'write_timeout' not in kwargs:
             kwargs['write_timeout'] = self.DEFAULT_WRITE_TIMEOUT
         self.serial = serial.Serial(*args, **kwargs)
+        self.buffered_reader = BufferedReader(self.serial, timeout=kwargs['timeout'])
         self.unsolicited = []
 
     def close(self):
@@ -45,6 +72,7 @@ class SIM800:
 
     def recv_command_result(self, command: Command):
         response = io.BytesIO()
+        lines = []
 
         line = self.serial.read_until(b'\r\n')
         if line == b'':
@@ -64,4 +92,27 @@ class SIM800:
         else:
             return final
 
+    def readline(self):
+        stream = self.buffered_reader
+        line = stream.read_until(b'\r')
+        next_b = stream.peek(1)
+        if next_b.startswith(b'\n'):
+            line += stream.read(1)
+        return line
+
+    def read_echo_or_result(self):
+        stream = self.buffered_reader
+        line = self.readline()
+        if line.endswith(b'\r'):
+            return line  # it's command + b'\r'
+        if line == b'\r\n':
+            # it's result start
+            result = io.BytesIO(line)
+            result.seek(0, io.SEEK_END)
+            while True:
+                result.write(self.readline())
+                next_b = stream.peek(2)
+                if len(next_b) < 1 or next_b.startswith(b'\r\n'):
+                    # it's result end
+                    return result.getvalue()
 
