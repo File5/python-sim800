@@ -3,6 +3,7 @@ import pytest
 from sim800.manager import SIM800, BufferedReader
 from sim800.commands.command import Command
 from sim800.results.result import Result
+import sim800.results.unsolicited as unsolicited
 import io
 
 
@@ -109,6 +110,45 @@ def test_sim800_send_command_recv_recv_result(sim800):
     assert type(r) is Result
     assert r.str_result == '+COPS: 0,0,"CHINA MOBILE"'
     assert r.raw_result == b'\r\n+COPS: 0,0,"CHINA MOBILE"\r\n'
+
+def test_sim800_send_command_recv_recv_result_unsolicited_before_command(sim800):
+    sim800.serial.write(b'\r\n+CMTI: "ME",1\r\n')
+    sim800.serial.after_next_write(b'\r\n+COPS: 0,0,"CHINA MOBILE"\r\n\r\nOK\r\n')
+    cmd = Command('+COPS?', ['+COPS: '])
+    f, r = sim800.send_command(cmd)
+
+    assert sim800.serial.getvalue() == b'\r\n+CMTI: "ME",1\r\nAT+COPS?\r' + b'\r\n+COPS: 0,0,"CHINA MOBILE"\r\n\r\nOK\r\n'
+
+    assert f.success
+    assert type(r) is Result
+    assert r.str_result == '+COPS: 0,0,"CHINA MOBILE"'
+    assert r.raw_result == b'\r\n+COPS: 0,0,"CHINA MOBILE"\r\n'
+
+    assert len(sim800.unsolicited) == 1
+    u = sim800.unsolicited[0]
+    assert type(u) is unsolicited.NewMessageResult
+    assert u.memory == 'ME'
+    assert u.index == 1
+
+def test_sim800_send_command_recv_recv_result_unsolicited_after_command(sim800):
+    sim800.serial.after_next_write(b'\r\n+COPS: 0,0,"CHINA MOBILE"\r\n\r\nOK\r\n' + b'\r\n+CMTI: "ME",1\r\n')
+    cmd = Command('+COPS?', ['+COPS: '])
+    f, r = sim800.send_command(cmd)
+
+    assert sim800.serial.getvalue() == b'AT+COPS?\r' + b'\r\n+COPS: 0,0,"CHINA MOBILE"\r\n\r\nOK\r\n' + b'\r\n+CMTI: "ME",1\r\n'
+
+    assert f.success
+    assert type(r) is Result
+    assert r.str_result == '+COPS: 0,0,"CHINA MOBILE"'
+    assert r.raw_result == b'\r\n+COPS: 0,0,"CHINA MOBILE"\r\n'
+
+    assert len(sim800.unsolicited) == 0
+
+    u = sim800.recv_unsolicited()
+    assert len(sim800.unsolicited) == 0
+    assert type(u) is unsolicited.NewMessageResult
+    assert u.memory == 'ME'
+    assert u.index == 1
 
 def test_sim800_send_command_recv_command_result(sim800):
     cmd = Command('+COPS?', ['+COPS: '])

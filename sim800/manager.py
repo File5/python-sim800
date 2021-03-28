@@ -2,6 +2,7 @@ import io
 import serial
 from sim800.commands.command import Command
 from sim800.results.result import ExecutedCommandFinalResult
+import sim800.results.unsolicited as unsolicited
 
 
 class TimeoutException(Exception):
@@ -64,11 +65,15 @@ class SIM800:
         if len(self.unsolicited) > 0:
             return self.unsolicited.pop(0)
 
-        line = self.serial.read_until(b'\r\n')
-        if line == b'':
-            raise TimeoutException('read timeout')
-        # TODO: parse unsolicited
-        return None
+        try:
+            line = self.read_echo_or_result()
+            results = unsolicited.from_response([line])
+            if len(results) >= 1:
+                return results[0]
+            else:
+                return None
+        except (serial.SerialTimeoutException, TimeoutException) as e:
+            return None
 
     def recv_command_result(self, command: Command):
         lines = []
@@ -86,7 +91,8 @@ class SIM800:
 
             # now, the final result is found but we need to parse previous lines
 
-            # TODO: parse unsolicited
+            unsolicited_results = unsolicited.from_response(lines)
+            self.unsolicited += unsolicited_results
             return final, command.parse_response(lines)
 
         except (serial.SerialTimeoutException, TimeoutException) as e:
@@ -110,7 +116,14 @@ class SIM800:
             result = io.BytesIO(line)
             result.seek(0, io.SEEK_END)
             while True:
-                result.write(self.readline())
+                line = self.readline()
+                if not line.endswith(b'\r\n'):
+                    # something's wrong, result continuation should end with \r\n
+                    # e.g. it's unsolicited before command
+                    # discard line (it's just echo ending with \r)
+                    return result.getvalue()
+
+                result.write(line)
                 next_b = stream.peek(2)
                 if len(next_b) < 1 or next_b.startswith(b'\r\n'):
                     # it's result end
