@@ -73,7 +73,7 @@ class SIM800:
             else:
                 return None
         except (serial.SerialTimeoutException, TimeoutException) as e:
-            return None
+            raise TimeoutException(e)
 
     def recv_command_result(self, command: Command):
         lines = []
@@ -101,6 +101,8 @@ class SIM800:
     def readline(self):
         stream = self.buffered_reader
         line = stream.read_until(b'\r')
+        if not line.endswith(b'\r'):
+            raise TimeoutException('read timeout')
         next_b = stream.peek(1)
         if next_b.startswith(b'\n'):
             line += stream.read(1)
