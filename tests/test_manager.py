@@ -7,6 +7,10 @@ import io
 
 
 class BytesIO(io.BytesIO):
+    def __init__(self):
+        self.after_write = None
+        self.seek_begin = False
+
     def read_until(self, expected, size=None):
         ignore_size = size is None
 
@@ -20,6 +24,18 @@ class BytesIO(io.BytesIO):
                 size -= 1
         return res
 
+    def after_next_write(self, b, seek_begin=True):
+        self.after_write = b
+        self.seek_begin = seek_begin
+
+    def write(self, *args, **kwargs):
+        super().write(*args, **kwargs)
+        if self.after_write is not None:
+            super().write(self.after_write)
+            self.after_write = None
+        if self.seek_begin:
+            self.seek(0)
+            self.seek_begin = False
 
 def test_bytes_io_read_until_expected():
     s = BytesIO()
@@ -35,6 +51,14 @@ def test_bytes_io_read_until_size():
 
     assert s.read_until(b'5', 4) == b'0123'
 
+def test_bytes_io_after_next_write():
+    s = BytesIO()
+    s.after_next_write(b'\r\nOK\r\n')
+    
+    s.write(b'AT\r')
+
+    assert s.getvalue() == b'AT\r\r\nOK\r\n'
+
 
 @pytest.fixture
 def sim800():
@@ -43,7 +67,18 @@ def sim800():
     return s
 
 
-def test_sim800_send_command(sim800):
+def test_sim800_send_command_recv_recv_result(sim800):
+    sim800.serial.after_next_write(b'\r\n+COPS: 0,0,"CHINA MOBILE"\r\n\r\nOK\r\n')
+    cmd = Command('+COPS?', ['+COPS: '])
+    r = sim800.send_command(cmd)
+
+    assert sim800.serial.getvalue() == b'AT+COPS?\r' + b'\r\n+COPS: 0,0,"CHINA MOBILE"\r\n\r\nOK\r\n'
+
+    assert type(r) is Result
+    assert r.str_result == '+COPS: 0,0,"CHINA MOBILE"'
+    assert r.raw_result == b'\r\n+COPS: 0,0,"CHINA MOBILE"\r\n'
+
+def test_sim800_send_command_recv_command_result(sim800):
     cmd = Command('+COPS?', ['+COPS: '])
     sim800.send_command(cmd, recv_result=False)
 
