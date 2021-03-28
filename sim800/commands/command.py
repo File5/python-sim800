@@ -3,6 +3,7 @@ from sim800.results import Result
 
 class Command:
     PREFIX = "AT"
+    SUFFIX = "\r"
 
     def __init__(self, cmd_string="", result_prefixes=None):
         self.cmd = cmd_string
@@ -11,7 +12,7 @@ class Command:
         self.result_prefixes = list(result_prefixes)
 
     def __bytes__(self):
-        return self.cmd.encode('ascii')
+        return (self.PREFIX + self.cmd + self.SUFFIX).encode('ascii')
 
     def __repr__(self):
         return '<{} "{}">'.format(self.__class__.__name__, self.PREFIX + self.cmd)

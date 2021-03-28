@@ -1,10 +1,19 @@
 from sim800.commands.command import Command
 
 
+def test_command_result_prefixes():
+    test_cmd = "test_cmd"
+
+    c = Command(test_cmd)
+    assert c.result_prefixes == []
+
+    c = Command(test_cmd, [test_cmd])
+    assert c.result_prefixes == [test_cmd]
+
 def test_command_bytes():
     test_cmd = "test_cmd"
     c = Command(test_cmd)
-    assert bytes(c) == test_cmd.encode('ascii')
+    assert bytes(c) == ("AT" + test_cmd + "\r").encode('ascii')
 
 def test_command_repr():
     test_cmd = "test_cmd"

@@ -1,5 +1,7 @@
 import io
 import serial
+from sim800.commands.command import Command
+from sim800.results.result import ExecutedCommandFinalResult
 
 
 class TimeoutException(Exception):
@@ -12,21 +14,21 @@ class SIM800:
 
     def __init__(self, *args, **kwargs):
         if 'timeout' not in kwargs:
-            kwargs['timeout'] = DEFAULT_TIMEOUT
+            kwargs['timeout'] = self.DEFAULT_TIMEOUT
         if 'write_timeout' not in kwargs:
-            kwargs['write_timeout'] = DEFAULT_WRITE_TIMEOUT
+            kwargs['write_timeout'] = self.DEFAULT_WRITE_TIMEOUT
         self.serial = serial.Serial(*args, **kwargs)
         self.unsolicited = []
 
     def close(self):
         self.serial.close()
 
-    def send_command(command: Command, recv_result=True):
+    def send_command(self, command: Command, recv_result=True):
         try:
             self.serial.write(bytes(command))
 
             if recv_result:
-                return self.recv_command_result()
+                return self.recv_command_result(command)
 
         except (serial.SerialTimeoutException, TimeoutException) as e:
             raise TimeoutException(e)
@@ -41,7 +43,7 @@ class SIM800:
         # TODO: parse unsolicited
         return None
 
-    def recv_command_result(self):
+    def recv_command_result(self, command: Command):
         response = io.BytesIO()
 
         line = self.serial.read_until(b'\r\n')
@@ -58,7 +60,7 @@ class SIM800:
 
         # TODO: parse unsolicited
         if final.success:
-            return command.parse_response(response)
+            return command.parse_response(response.getvalue())
         else:
             return final
 
