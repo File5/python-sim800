@@ -16,7 +16,7 @@ def test_result_str_result():
     assert r.str_result == "result"
 
 def test_executed_command_final_result():
-    response = b'OK\r\n'
+    response = b'\r\nOK\r\n'
     r = ExecutedCommandFinalResult.from_response(response)
 
     assert r.success
@@ -24,13 +24,13 @@ def test_executed_command_final_result():
     assert repr(r) == '<ExecutedCommandFinalResult "OK">'
 
 def test_executed_command_final_result_from_not_final():
-    response = b'SIM800 R14.18\r\n'
+    response = b'\r\nSIM800 R14.18\r\n'
     r = ExecutedCommandFinalResult.from_response(response)
 
     assert r is None
 
 def test_executed_command_final_result_error():
-    response = b'ERROR\r\n'
+    response = b'\r\nERROR\r\n'
     r = ExecutedCommandFinalResult.from_response(response)
 
     assert not r.success
@@ -38,7 +38,7 @@ def test_executed_command_final_result_error():
     assert repr(r) == '<ExecutedCommandFinalResult "ERROR">'
 
 def test_executed_command_final_result_cme():
-    response = b'+CME ERROR: SIM not inserted\r\n'
+    response = b'\r\n+CME ERROR: SIM not inserted\r\n'
     r = ExecutedCommandFinalResult.from_response(response)
 
     assert not r.success
@@ -46,7 +46,7 @@ def test_executed_command_final_result_cme():
     assert repr(r) == '<ExecutedCommandFinalResult "+CME ERROR: SIM not inserted">'
 
 def test_executed_command_final_result_cme_code():
-    response = b'+CME ERROR: 10\r\n'
+    response = b'\r\n+CME ERROR: 10\r\n'
     r = ExecutedCommandFinalResult.from_response(response)
 
     assert not r.success
@@ -54,7 +54,7 @@ def test_executed_command_final_result_cme_code():
     assert repr(r) == '<ExecutedCommandFinalResult "+CME ERROR: 10">'
 
 def test_executed_command_final_result_cms():
-    response = b'+CMS ERROR: Unknown\r\n'
+    response = b'\r\n+CMS ERROR: Unknown\r\n'
     r = ExecutedCommandFinalResult.from_response(response)
 
     assert not r.success
@@ -62,7 +62,7 @@ def test_executed_command_final_result_cms():
     assert repr(r) == '<ExecutedCommandFinalResult "+CMS ERROR: Unknown">'
 
 def test_executed_command_final_result_cms_code():
-    response = b'+CMS ERROR: 500\r\n'
+    response = b'\r\n+CMS ERROR: 500\r\n'
     r = ExecutedCommandFinalResult.from_response(response)
 
     assert not r.success

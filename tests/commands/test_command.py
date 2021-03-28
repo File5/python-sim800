@@ -31,39 +31,43 @@ def test_command_parse_lines():
     test_cmd = "+COPS"
     c = Command(test_cmd, [test_cmd])
     r = [
-        b'',
-        b'+CNMI',  # some unsolicited result
-        b'',
-        b'+COPS: 0,0,"CHINA MOBILE"',
-        b'',
-        b'OK',
-        b''
+        b'\r\n+CNMI\r\n',  # some unsolicited result
+        b'\r\n+COPS: 0,0,"CHINA MOBILE"\r\n',
+        b'\r\nOK\r\n',
     ]
-    r = b'\r\n'.join(r)
     cmd_r = c.parse_response(r)
 
-    assert cmd_r.raw_result == b'\r\n'.join([
-        b'',
-        b'+COPS: 0,0,"CHINA MOBILE"',
-        b'',
-    ])
+    assert cmd_r.raw_result == b'\r\n+COPS: 0,0,"CHINA MOBILE"\r\n'
+
+def test_command_parse_lines_wrong():
+    test_cmd = "+COPS"
+    c = Command(test_cmd, [test_cmd])
+    r = [
+        b'\r\n+CNMI: 1,1\r\n',
+    ]
+    cmd_r = c.parse_response(r)
+
+    assert cmd_r is None
 
 def test_command_parse_lines_no_empty_before():
     test_cmd = "+COPS"
     c = Command(test_cmd, [test_cmd])
     r = [
-        b'AT+COPS?',
-        b'+COPS: 0,0,"CHINA MOBILE"',
-        b'',
-        b'OK',
-        b''
+        b'AT+COPS?\r',
+        b'\r\n+COPS: 0,0,"CHINA MOBILE"\r\n',
+        b'\r\nOK\r\n',
     ]
-    r = b'\r\n'.join(r)
     cmd_r = c.parse_response(r)
 
-    assert cmd_r.raw_result == b'\r\n'.join([
-        b'',
-        b'+COPS: 0,0,"CHINA MOBILE"',
-        b'',
-    ])
+    assert cmd_r.raw_result == b'\r\n+COPS: 0,0,"CHINA MOBILE"\r\n'
+
+def test_command_parse_lines_no_prefix_crlf():
+    test_cmd = "+COPS"
+    c = Command(test_cmd, [test_cmd])
+    r = [
+        b'+COPS: 0,0,"CHINA MOBILE"\r\n',
+    ]
+    cmd_r = c.parse_response(r)
+
+    assert cmd_r.raw_result == b'+COPS: 0,0,"CHINA MOBILE"\r\n'
 

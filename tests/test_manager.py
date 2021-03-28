@@ -101,10 +101,11 @@ def test_sim800_read_echo_or_result(sim800):
 def test_sim800_send_command_recv_recv_result(sim800):
     sim800.serial.after_next_write(b'\r\n+COPS: 0,0,"CHINA MOBILE"\r\n\r\nOK\r\n')
     cmd = Command('+COPS?', ['+COPS: '])
-    r = sim800.send_command(cmd)
+    f, r = sim800.send_command(cmd)
 
     assert sim800.serial.getvalue() == b'AT+COPS?\r' + b'\r\n+COPS: 0,0,"CHINA MOBILE"\r\n\r\nOK\r\n'
 
+    assert f.success
     assert type(r) is Result
     assert r.str_result == '+COPS: 0,0,"CHINA MOBILE"'
     assert r.raw_result == b'\r\n+COPS: 0,0,"CHINA MOBILE"\r\n'
@@ -118,7 +119,8 @@ def test_sim800_send_command_recv_command_result(sim800):
     sim800.serial.write(b'\r\n+COPS: 0,0,"CHINA MOBILE"\r\n\r\nOK\r\n')
     sim800.serial.seek(0)
 
-    r = sim800.recv_command_result(cmd)
+    f, r = sim800.recv_command_result(cmd)
+    assert f.success
     assert type(r) is Result
     assert r.str_result == '+COPS: 0,0,"CHINA MOBILE"'
     assert r.raw_result == b'\r\n+COPS: 0,0,"CHINA MOBILE"\r\n'

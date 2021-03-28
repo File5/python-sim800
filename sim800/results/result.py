@@ -76,8 +76,9 @@ class ExecutedCommandFinalResult(Result):
 
     @classmethod
     def from_response(cls, response):
+        s = response.strip()
         for prefix in cls.PREFIXES:
-            if response.startswith(prefix):
+            if s.startswith(prefix):
                 return cls(response)
         return None
 

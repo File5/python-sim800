@@ -71,26 +71,26 @@ class SIM800:
         return None
 
     def recv_command_result(self, command: Command):
-        response = io.BytesIO()
         lines = []
 
-        line = self.serial.read_until(b'\r\n')
-        if line == b'':
-            raise TimeoutException('read timeout')
-        response.write(line)
-        final = ExecutedCommandFinalResult.from_response(line)
-        while final is None:
-            line = self.serial.read_until(b'\r\n')
-            if line == b'':
-                raise TimeoutException('read timeout')
-            response.write(line)
-            final = ExecutedCommandFinalResult.from_response(line)
+        try:
+            line = self.read_echo_or_result()
+            lines.append(line)
 
-        # TODO: parse unsolicited
-        if final.success:
-            return command.parse_response(response.getvalue())
-        else:
-            return final
+            final = ExecutedCommandFinalResult.from_response(line)
+            while final is None:
+                line = self.read_echo_or_result()
+                lines.append(line)
+
+                final = ExecutedCommandFinalResult.from_response(line)
+
+            # now, the final result is found but we need to parse previous lines
+
+            # TODO: parse unsolicited
+            return final, command.parse_response(lines)
+
+        except (serial.SerialTimeoutException, TimeoutException) as e:
+            raise TimeoutException(e)
 
     def readline(self):
         stream = self.buffered_reader
