@@ -1,4 +1,6 @@
 class Result:
+    PREFIXES = []
+
     def __init__(self, raw_result):
         self.raw_result = raw_result
 
@@ -8,6 +10,14 @@ class Result:
     @property
     def str_result(self):
         return self.raw_result.decode('ascii').strip()
+
+    @classmethod
+    def from_response(cls, response):
+        s = response.strip()
+        for prefix in cls.PREFIXES:
+            if s.startswith(prefix):
+                return cls(response)
+        return None
 
 
 class ExecutedCommandFinalResult(Result):
@@ -73,12 +83,4 @@ class ExecutedCommandFinalResult(Result):
             err = int(err)
 
         return cls.CMS_CODE_TO_MEANING.get(err, 'unknown CMS error code')
-
-    @classmethod
-    def from_response(cls, response):
-        s = response.strip()
-        for prefix in cls.PREFIXES:
-            if s.startswith(prefix):
-                return cls(response)
-        return None
 
