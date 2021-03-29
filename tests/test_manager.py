@@ -5,70 +5,29 @@ from sim800.manager import SIM800, BufferedReader, TimeoutException
 from sim800.commands.command import Command
 from sim800.results.result import Result
 import sim800.results.unsolicited as unsolicited
-import io
 
 
-class BytesIO(io.BytesIO):
-    def __init__(self):
-        self.after_write = None
-        self.seek_begin = False
-
-    def read_until(self, expected, size=None):
-        ignore_size = size is None
-
-        res = b''
-        res += self.read(1)
-        if size is not None:
-            size -= 1
-        while not res.endswith(expected) and (ignore_size or size > 0):
-            res += self.read(1)
-            if size is not None:
-                size -= 1
-        return res
-
-    def after_next_write(self, b, seek_begin=True):
-        self.after_write = b
-        self.seek_begin = seek_begin
-
-    def write(self, *args, **kwargs):
-        super().write(*args, **kwargs)
-        if self.after_write is not None:
-            super().write(self.after_write)
-            self.after_write = None
-        if self.seek_begin:
-            self.seek(0)
-            self.seek_begin = False
-
-def test_bytes_io_read_until_expected():
-    s = BytesIO()
+def test_bytes_io_read_until_expected(bytes_io):
+    s = bytes_io()
     s.write(b'0123456789')
     s.seek(0)
 
     assert s.read_until(b'5') == b'012345'
 
-def test_bytes_io_read_until_size():
-    s = BytesIO()
+def test_bytes_io_read_until_size(bytes_io):
+    s = bytes_io()
     s.write(b'0123456789')
     s.seek(0)
 
     assert s.read_until(b'5', 4) == b'0123'
 
-def test_bytes_io_after_next_write():
-    s = BytesIO()
+def test_bytes_io_after_next_write(bytes_io):
+    s = bytes_io()
     s.after_next_write(b'\r\nOK\r\n')
     
     s.write(b'AT\r')
 
     assert s.getvalue() == b'AT\r\r\nOK\r\n'
-
-
-@pytest.fixture
-def sim800():
-    s = SIM800()
-    timeout = s.serial.timeout
-    s.serial = BytesIO()
-    s.buffered_reader = BufferedReader(s.serial, timeout=timeout)
-    return s
 
 
 def test_sim800_readline(sim800):
