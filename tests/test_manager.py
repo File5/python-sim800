@@ -1,7 +1,7 @@
 import pytest
 
 import serial
-from sim800.manager import SIM800, BufferedReader, TimeoutException
+from sim800.manager import SIM800, TimeoutException
 from sim800.commands.command import Command
 from sim800.results.result import Result
 import sim800.results.unsolicited as unsolicited
@@ -129,7 +129,6 @@ def test_sim800_recv_unsolicited_timeout():
     sim800 = SIM800(timeout=3)
     timeout = sim800.serial.timeout
     sim800.serial = serial.serial_for_url('loop://', timeout=timeout)
-    sim800.buffered_reader = BufferedReader(sim800.serial, timeout=timeout)
     with pytest.raises(TimeoutException):
         u = sim800.recv_unsolicited()
 

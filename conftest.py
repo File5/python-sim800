@@ -1,26 +1,36 @@
 import pytest
 
 import io
-from sim800.manager import SIM800, BufferedReader, TimeoutException
+import serial
+from sim800.manager import SIM800, TimeoutException
 
 
 class BytesIO(io.BytesIO):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        self._timeout = 1
+        if 'timeout' in kwargs:
+            self._timeout = kwargs.pop('timeout')
+        super().__init__(*args, **kwargs)
         self.after_write = None
         self.seek_begin = False
 
-    def read_until(self, expected, size=None):
-        ignore_size = size is None
-
-        res = b''
-        res += self.read(1)
-        if size is not None:
-            size -= 1
-        while not res.endswith(expected) and (ignore_size or size > 0):
-            res += self.read(1)
-            if size is not None:
-                size -= 1
-        return res
+    def read_until(self, expected=b'\n', size=None):
+        lenterm = len(expected)
+        line = bytearray()
+        timeout = serial.serialutil.Timeout(self._timeout)
+        while True:
+            c = self.read(1)
+            if c:
+                line += c
+                if line[-lenterm:] == expected:
+                    break
+                if size is not None and len(line) >= size:
+                    break
+            else:
+                break
+            if timeout.expired():
+                break
+        return bytes(line)
 
     def after_next_write(self, b, seek_begin=True):
         self.after_write = b
@@ -46,6 +56,5 @@ def sim800():
     s = SIM800()
     timeout = s.serial.timeout
     s.serial = BytesIO()
-    s.buffered_reader = BufferedReader(s.serial, timeout=timeout)
     return s
 
