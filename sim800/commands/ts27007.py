@@ -38,7 +38,7 @@ class SelectTypeOfAddressCommand(ExtendedCommand):
     @classmethod
     def write(cls, t):
         if t not in cls.TYPE:
-            raise ValueError('"{}" is not supported'.format(chset))
+            raise ValueError('"{}" is not supported'.format(t))
         return super().write(t)
 
 
@@ -92,7 +92,7 @@ class SelectPhonebookMemoryStorageCommand(ExtendedCommand):
         if storage is None:
             storage = cls.SIM
         if storage not in cls.STORAGE:
-            raise ValueError('"{}" is not supported'.format(chset))
+            raise ValueError('"{}" is not supported'.format(storage))
         return super().write(storage)
 
 
@@ -143,7 +143,7 @@ class NetworkRegistrationCommand(ExtendedCommand):
         if n is None:
             n = cls.DISABLE
         if n not in cls.N:
-            raise ValueError('"{}" is not supported'.format(chset))
+            raise ValueError('"{}" is not supported'.format(n))
         return super().write(n)
 
 
@@ -165,9 +165,28 @@ class ClockCommand(ExtendedCommand):
         if isinstance(time, str):
             time_string = time
         elif isinstance(time, datetime.datetime):
-            tz_value = tz.seconds // cls.QUARTER
+            tz_seconds = tz.seconds
+            if tz.days < 0:
+                tz_seconds -= 86400
+            tz_value = tz_seconds // cls.QUARTER
             time_string = time.strftime(cls.DATETIME_FORMAT) + cls.TZ_FORMAT.format(tz_value)
         else:
             raise ValueError("unsupported argument type, only 'str' and 'datetime' are supported")
         return super().write(time_string)
+
+
+class BatteryChargeCommand(ExtendedCommand):
+    COMMANDS = [ExtendedCommand.TEST, ExtendedCommand.EXECUTE]
+    BASE_CMD = "+CBC"
+
+
+class USSDCommand(ExtendedCommand):
+    COMMANDS = [ExtendedCommand.TEST, ExtendedCommand.READ, ExtendedCommand.WRITE]
+    BASE_CMD = "+CUSD"
+
+    DISABLE_RESULT = 0
+    ENABLE_RESULT = 1
+    CANCEL_SESSION = 2
+
+    N = [DISABLE_RESULT, ENABLE_RESULT, CANCEL_SESSION]
 
