@@ -206,3 +206,57 @@ class SendSMSMessageFromStorageCommand(ExtendedCommand):
     COMMANDS = [ExtendedCommand.TEST, ExtendedCommand.WRITE]
     BASE_CMD = "+CMSS"
 
+
+class NewSMSMessageIndicationCommand(ExtendedCommand):
+    COMMANDS = [ExtendedCommand.TEST, ExtendedCommand.READ, ExtendedCommand.WRITE]
+    BASE_CMD = "+CNMI"
+
+    BUFFER = 0
+    DISCARD_RESERVED = 1  # discard new message indications when TA-TE is reserved (serial is used for data)
+    BUFFER_RESERVED = 2  # buffer new message indications when TA-TE is reserved (send when becomes free)
+    BREAK_RESERVED = 3  # send BREAK when TA-TE is reserved
+
+    MODE = [BUFFER, DISCARD_RESERVED, BUFFER_RESERVED, BREAK_RESERVED]
+
+    NO_INDICATIONS = 0
+    MEMORY_INDICATION = 1
+    CLASS2_MEMORY_INDICATION_OTHER_REDIRECT = 2
+    CLASS3_REDIRECT_OTHER_MEMORY_INDICATION = 3
+
+    MT = [NO_INDICATIONS, MEMORY_INDICATION, CLASS2_MEMORY_INDICATION_OTHER_REDIRECT, CLASS3_REDIRECT_OTHER_MEMORY_INDICATION]
+
+    CBM_NO_INDICATIONS = 0
+    CBM_REDIRECT = 2
+
+    BM = [CBM_NO_INDICATIONS, CBM_REDIRECT]
+
+    REPORT_NO_INDICATIONS = 0
+    REPORT_REDIRECT = 1
+
+    DS = [REPORT_NO_INDICATIONS, REPORT_REDIRECT]
+
+    # when MODE in {1, 2, 3} is entered
+    BUFFER_FLUSHED = 0
+    BUFFER_CLEARED = 1
+
+    BFR = [BUFFER_FLUSHED, BUFFER_CLEARED]
+
+
+class PreferredSMSMessageStorageCommand(ExtendedCommand):
+    COMMANDS = [ExtendedCommand.TEST, ExtendedCommand.READ, ExtendedCommand.WRITE]
+    BASE_CMD = "+CPMS"
+
+    SIM = "SM"
+    MODEM = "ME"
+    SIM_PREFERRED = "SM_P"
+    MODEM_PREFERRED = "ME_P"
+    SIM_PREFERRED_OR_MODEM = "MT"
+
+    MEM = [SIM, MODEM, SIM_PREFERRED, MODEM_PREFERRED, SIM_PREFERRED_OR_MODEM]
+    # <mem1>; <mem2>; <mem3> -- read,delete; send,write; received
+
+
+class SMSServiceCenterAddressCommand(ExtendedCommand):
+    COMMANDS = [ExtendedCommand.TEST, ExtendedCommand.READ, ExtendedCommand.WRITE]
+    BASE_CMD = "+CSCA"
+
