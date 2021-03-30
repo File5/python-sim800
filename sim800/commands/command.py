@@ -80,6 +80,26 @@ class ExtendedCommand(Command):
         return cls._factory("", *args, **kwargs)
 
 
+class NextLineArgCommand(ExtendedCommand):
+    SUB = "\x1a"  # Ctrl-Z
+    ESC = "\x1b"
+
+    @classmethod
+    def write(cls, *args, next_line_arg=""):
+        if cls.WRITE not in cls.COMMANDS:
+            raise NotImplementedError
+        params = [cls.LEFT_OUT if x is None else x for x in args]
+        params = ['"{}"'.format(x) if isinstance(x, str) else str(x) for x in params]
+        cmd_string_suffix = "=" + ','.join(params)
+
+        cmd_string = cls.BASE_CMD + cmd_string_suffix + "\r" + next_line_arg + cls.SUB
+        result_prefixes = [cls.BASE_CMD + ': ']
+
+        cmd = cls(cmd_string, result_prefixes)
+        cmd.SUFFIX = ""
+        return cmd
+
+
 class CombinedCommand(Command):
     def __init__(self, commands, *args):
         if len(args) > 0:

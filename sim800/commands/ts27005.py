@@ -1,4 +1,4 @@
-from sim800.commands.command import Command, NoResponseCommand, ExtendedCommand
+from sim800.commands.command import Command, NoResponseCommand, ExtendedCommand, NextLineArgCommand
 from sim800.results import Result
 
 
@@ -138,12 +138,9 @@ class ReadSMSMessageCommand(ExtendedCommand):
         return super().write(stat, mode)
 
 
-class SendSMSMessageCommand(ExtendedCommand):
+class SendSMSMessageCommand(NextLineArgCommand):
     COMMANDS = [ExtendedCommand.TEST, ExtendedCommand.WRITE]
     BASE_CMD = "+CMGS"
-
-    SUB = "\x1a"  # Ctrl-Z
-    ESC = "\x1b"
 
     @classmethod
     def write(cls, *args, text=None, pdu=None):
@@ -156,23 +153,56 @@ class SendSMSMessageCommand(ExtendedCommand):
             assert len(args) == 1, "for pdu mode the args are: <length>"
             next_line_arg = pdu
 
-        if cls.WRITE not in cls.COMMANDS:
-            raise NotImplementedError
-        params = [cls.LEFT_OUT if x is None else x for x in args]
-        params = ['"{}"'.format(x) if isinstance(x, str) else str(x) for x in params]
-        cmd_string_suffix = "=" + ','.join(params)
-
-        cmd_string = cls.BASE_CMD + cmd_string_suffix + "\r" + next_line_arg + cls.SUB
-        result_prefixes = [cls.BASE_CMD + ': ']
-
-        cmd = cls(cmd_string, result_prefixes)
-        cmd.SUFFIX = ""
-        return cmd
+        return super().write(*args, next_line_arg=next_line_arg)
 
 
-class WriteSMSMessageToMemoryCommand(ExtendedCommand):
+class WriteSMSMessageToMemoryCommand(NextLineArgCommand):
     COMMANDS = [ExtendedCommand.TEST, ExtendedCommand.WRITE, ExtendedCommand.EXECUTE]
     BASE_CMD = "+CMGW"
 
-    # TODO: implement write similar to SendSMSMessageCommand
+    class _Mode:
+        pass
+
+    class _PduMode(_Mode):
+        UNREAD = 0
+        READ = 1
+        UNSENT = 2
+        SENT = 3
+
+        STAT = [UNREAD, READ, UNSENT, SENT]
+
+    class _TextMode(_Mode):
+        UNSENT = "STO UNSENT"
+        SENT = "STO SENT"
+
+        STAT = [UNSENT, SENT]
+
+    PDU_MODE = _PduMode()
+    TEXT_MODE = _TextMode()
+
+    @classmethod
+    def write(cls, *args, text=None, pdu=None):
+        assert (text is None) ^ (pdu is None), "only one of 'text', 'pdu' should be provided"
+        next_line_arg = None
+        if text is not None:
+            assert 1 <= len(args) <= 3, "for text mode the args are: <oa/da>[, <tooa/toda>][, <stat>]"
+            if len(args) > 2:
+                stat = args[2]
+                if stat not in cls.TEXT_MODE.STAT:
+                    raise ValueError('"{}" is not supported'.format(stat))
+            next_line_arg = text
+        else:
+            assert 1 <= len(args) <= 2, "for pdu mode the args are: <length>[, <stat>]"
+            if len(args) > 1:
+                stat = args[1]
+                if stat not in cls.PDU_MODE.STAT:
+                    raise ValueError('"{}" is not supported'.format(stat))
+            next_line_arg = pdu
+
+        return super().write(*args, next_line_arg=next_line_arg)
+
+
+class SendSMSMessageFromStorageCommand(ExtendedCommand):
+    COMMANDS = [ExtendedCommand.TEST, ExtendedCommand.WRITE]
+    BASE_CMD = "+CMSS"
 
