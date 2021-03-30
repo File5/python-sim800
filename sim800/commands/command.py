@@ -1,4 +1,5 @@
-from sim800.results import Result
+import functools
+from sim800.results.result import Result, CombinedResult
 
 
 class Command:
@@ -77,4 +78,38 @@ class ExtendedCommand(Command):
         if cls.EXECUTE not in cls.COMMANDS:
             raise NotImplementedError
         return cls._factory("", *args, **kwargs)
+
+
+class CombinedCommand(Command):
+    def __init__(self, commands, *args):
+        if len(args) > 0:
+            # agruments are passed as arg1, arg2, ...
+            self.commands = [commands] + list(args)
+        else:
+            try:
+                # arguments are passed as iterable(arg1, arg2, ...)
+                self.commands = list(commands)
+            except TypeError:
+                # it's single argument arg1
+                self.commands = [commands]
+
+        cmd_string = [c.cmd for c in self.commands]
+        cmd_string = ";".join(cmd_string)
+        result_prefixes = [c.result_prefixes for c in self.commands]
+        result_prefixes = functools.reduce(lambda a, b: a + b, result_prefixes, [])
+        super().__init__(cmd_string, result_prefixes)
+
+    def parse_response(self, lines):
+        results = []
+        for line in lines:
+            s = line.strip()
+            for cmd in self.commands:
+                result = cmd.parse_response([line])
+                if result is not None:
+                    results.append(result)
+                    break  # cmd loop
+        if len(results) > 0:
+            return CombinedResult(results)
+        else:
+            return None
 

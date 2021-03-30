@@ -7,6 +7,9 @@ class Result:
     def __repr__(self):
         return '<{} "{}">'.format(self.__class__.__name__, self.str_result)
 
+    def __eq__(self, other):
+        return self.raw_result == other.raw_result
+
     @property
     def str_result(self):
         return self.raw_result.decode('ascii').strip()
@@ -83,4 +86,18 @@ class ExecutedCommandFinalResult(Result):
             err = int(err)
 
         return cls.CMS_CODE_TO_MEANING.get(err, 'unknown CMS error code')
+
+
+class CombinedResult(Result, list):
+    def __init__(self, results):
+        raw_result = b''.join([r.raw_result for r in results])
+        Result.__init__(self, raw_result)
+        list.__init__(self, results)
+
+    def __repr__(self):
+        return '<{} {}>'.format(self.__class__.__name__, self.str_result)
+
+    @property
+    def str_result(self):
+        return '[' + ', '.join([r.str_result for r in self]) + ']'
 

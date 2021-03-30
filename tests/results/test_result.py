@@ -1,4 +1,4 @@
-from sim800.results.result import Result, ExecutedCommandFinalResult
+from sim800.results.result import Result, ExecutedCommandFinalResult, CombinedResult
 
 
 def test_result_repr():
@@ -68,4 +68,12 @@ def test_executed_command_final_result_cms_code():
     assert not r.success
     assert r.error == 'Unknown'
     assert repr(r) == '<ExecutedCommandFinalResult "+CMS ERROR: 500">'
+
+def test_combined_result():
+    results = [Result(b'\r\n1\r\n'), Result(b'\r\n2\r\n'), Result(b'\r\n3\r\n')]
+    r = CombinedResult(results)
+
+    assert r.raw_result == b'\r\n1\r\n\r\n2\r\n\r\n3\r\n'
+    assert repr(r) == '<CombinedResult [1, 2, 3]>'
+    assert r.str_result == '[1, 2, 3]'
 
