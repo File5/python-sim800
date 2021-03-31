@@ -15,12 +15,15 @@ def test_revision(sim800):
     rev_cmd = Command("+GSV", ['SIM', 'Rev'])
     f, r = s.send_command(rev_cmd)
     assert f.success
-    assert r.str_result == "SIMCOM_Ltd\r\nSIMCOM_SIM800L\r\nRevision:***REMOVED***"
+    result_lines = r.str_result.split("\r\n")
+    assert result_lines[0] == "SIMCOM_Ltd"
+    assert result_lines[1].startswith("SIMCOM_SIM")
+    assert result_lines[2].startswith("Revision:")
 
 def test_imei(sim800):
     s = SIM800('/dev/ttyAMA0', timeout=3)
     rev_cmd = Command("+GSN", ['8626'])
     f, r = s.send_command(rev_cmd)
     assert f.success
-    assert r.str_result == "***REMOVED***"
+    assert r.str_result.startswith("86264303")
 

@@ -31,7 +31,7 @@ def test_bytes_io_after_next_write(bytes_io):
 
 
 def test_sim800_readline(sim800):
-    data = b'AT+GSV;+GSN\r\r\nSIMCOM_Ltd\r\nSIMCOM_SIM800L\r\nRevision:***REMOVED***\r\n\r\n***REMOVED***\r\n\r\nOK\r\n'
+    data = b'AT+GSV;+GSN\r\r\nSIMCOM_Ltd\r\nSIMCOM_SIM800L\r\nRevision:9999999SIM800L99\r\n\r\n862643039999994\r\n\r\nOK\r\n'
 
     s = sim800
     s.serial.write(data)
@@ -41,22 +41,22 @@ def test_sim800_readline(sim800):
     assert s.readline() == b'\r\n'
     assert s.readline() == b'SIMCOM_Ltd\r\n'
     assert s.readline() == b'SIMCOM_SIM800L\r\n'
-    assert s.readline() == b'Revision:***REMOVED***\r\n'
+    assert s.readline() == b'Revision:9999999SIM800L99\r\n'
     assert s.readline() == b'\r\n'
-    assert s.readline() == b'***REMOVED***\r\n'
+    assert s.readline() == b'862643039999994\r\n'
     assert s.readline() == b'\r\n'
     assert s.readline() == b'OK\r\n'
 
 def test_sim800_read_echo_or_result(sim800):
-    data = b'AT+GSV;+GSN\r\r\nSIMCOM_Ltd\r\nSIMCOM_SIM800L\r\nRevision:***REMOVED***\r\n\r\n***REMOVED***\r\n\r\nOK\r\n'
+    data = b'AT+GSV;+GSN\r\r\nSIMCOM_Ltd\r\nSIMCOM_SIM800L\r\nRevision:9999999SIM800L99\r\n\r\n862643039999994\r\n\r\nOK\r\n'
 
     s = sim800
     s.serial.write(data)
     s.serial.seek(0)
 
     assert s.read_echo_or_result() == b'AT+GSV;+GSN\r'
-    assert s.read_echo_or_result() == b'\r\nSIMCOM_Ltd\r\nSIMCOM_SIM800L\r\nRevision:***REMOVED***\r\n'
-    assert s.read_echo_or_result() == b'\r\n***REMOVED***\r\n'
+    assert s.read_echo_or_result() == b'\r\nSIMCOM_Ltd\r\nSIMCOM_SIM800L\r\nRevision:9999999SIM800L99\r\n'
+    assert s.read_echo_or_result() == b'\r\n862643039999994\r\n'
     assert s.read_echo_or_result() == b'\r\nOK\r\n'
 
 def test_sim800_send_command_recv_recv_result(sim800):
