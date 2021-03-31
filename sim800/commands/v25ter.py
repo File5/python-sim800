@@ -25,7 +25,7 @@ class FactoryDefinedConfigCommand(NoResponseCommand):
 
 class DisplayCurrentConfigCommand(NoResponseCommand):
     def __init__(self):
-        super().__init__("&F")
+        super().__init__("&V")
 
     def parse_response(self, lines):
         return Result(b''.join(lines))

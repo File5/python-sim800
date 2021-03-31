@@ -48,7 +48,7 @@ class IMSICommand(ExtendedCommand):
 
     def __init__(self, cmd_string, result_prefixes=None):
         result_prefixes = [str(i) for i in range(10) if i not in (1, 8)]
-        super().__init__(cmd_string, result_refixes)
+        super().__init__(cmd_string, result_prefixes)
 
 
 class CallingLineIdPresentationCommand(ExtendedCommand):

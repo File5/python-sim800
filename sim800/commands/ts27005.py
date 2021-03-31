@@ -2,28 +2,6 @@ from sim800.commands.command import Command, NoResponseCommand, ExtendedCommand,
 from sim800.results import Result
 
 
-# TODO: delete, just for reference
-class SelectCharSetCommand(ExtendedCommand):
-    COMMANDS = [ExtendedCommand.TEST, ExtendedCommand.READ, ExtendedCommand.WRITE]
-    BASE_CMD = "+CSCS"
-
-    GSM = "GSM"
-    UCS2 = "UCS2"
-    IRA = "IRA"
-    HEX = "HEX"
-    PCCP = "PCCP"
-    PCDN = "PCDN"
-    LATIN1 = "8859-1"
-
-    CHSET = [GSM, UCS2, IRA, HEX, PCCP, PCDN, LATIN1]
-
-    @classmethod
-    def write(cls, chset):
-        if chset not in cls.CHSET:
-            raise ValueError('"{}" is not supported'.format(chset))
-        return super().write(chset)
-
-
 class DeleteSMSMessageCommand(ExtendedCommand):
     COMMANDS = [ExtendedCommand.TEST, ExtendedCommand.WRITE]
     BASE_CMD = "+CMGD"
