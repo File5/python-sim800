@@ -73,6 +73,9 @@ class SIM800:
         except (serial.SerialTimeoutException, TimeoutException) as e:
             raise TimeoutException(e)
 
+    def _is_final(self, line):
+        return ExecutedCommandFinalResult.from_response(line) is not None
+
     def readline(self):
         line = self.__readline_buffer
         self.__readline_buffer = b''
@@ -127,6 +130,11 @@ class SIM800:
                     return result.getvalue()
 
                 result.write(line)
+
+                if self._is_final(line):
+                    # it's result end
+                    # no need to check next line (can result in timeout)
+                    return result.getvalue()
 
                 try:
                     self.__cached_line = self.readline()
