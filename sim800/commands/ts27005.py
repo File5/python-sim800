@@ -17,7 +17,7 @@ class DeleteSMSMessageCommand(ExtendedCommand):
     @classmethod
     def write(cls, index, del_flag=None):
         if del_flag is None:
-            del_flag = DELETE_SPECIFIED
+            del_flag = cls.DELETE_SPECIFIED
         if type(index) is not int:
             raise ValueError('index should be int')
         if del_flag not in cls.DEL_FLAG:
@@ -113,7 +113,7 @@ class ReadSMSMessageCommand(ExtendedCommand):
             raise ValueError('index should be int')
         if mode not in cls.MODE:
             raise ValueError('"{}" is not supported'.format(mode))
-        return super().write(stat, mode)
+        return super().write(index, mode)
 
 
 class SendSMSMessageCommand(NextLineArgCommand):
@@ -183,6 +183,26 @@ class WriteSMSMessageToMemoryCommand(NextLineArgCommand):
 class SendSMSMessageFromStorageCommand(ExtendedCommand):
     COMMANDS = [ExtendedCommand.TEST, ExtendedCommand.WRITE]
     BASE_CMD = "+CMSS"
+
+    @classmethod
+    def write(cls, index, da=None, toda=None):
+        if type(index) is not int:
+            raise ValueError('index should be int')
+
+        args = [index]
+
+        if da is not None:
+            if type(da) is not str:
+                raise ValueError('index should be str')
+            args.append(da)
+
+        if toda is not None:
+            if type(toda) is not int:
+                raise ValueError('index should be int')
+            args.append(toda)
+
+        return super().write(*args)
+
 
 
 class NewSMSMessageIndicationCommand(ExtendedCommand):
