@@ -132,8 +132,3 @@ def test_cnd_sms_message_from_storage_command_write():
     with pytest.raises(ValueError):
         c = cmd.write(9,"+999","145")
 
-
-def test_new_sms_message_indication_command_write():
-    cmd = NewSMSMessageIndicationCommand
-
-
